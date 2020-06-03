@@ -45,12 +45,12 @@ public class Connection extends Thread {
     	return this.connected ;
     }
     
-    public int getsplit()
+    public int getsplit() 
     {
 
-    		int oldsplit = split ;
+    		this.splitnr = split ;
     		split ++ ;
-    		return oldsplit ;
+    		return this.splitnr;
 
     }
     
@@ -62,10 +62,20 @@ public class Connection extends Thread {
         //BufferedWriter br = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
         if (machinenr < 10) {
         	System.out.println("Starting connection on machine"+machinenr+"...");
-        	ProcessBuilder pb = new ProcessBuilder("ssh", "-tt", "pgallo@tp-1a222-0" + machinenr + ".enst.fr", "-o StrictHostKeyChecking = no", "-i id_rsa") ;
+        	ProcessBuilder pb = new ProcessBuilder("ssh", "-tt", "pgallo@tp-1a222-0" + machinenr + ".enst.fr", "-o StrictHostKeyChecking = no");
         	 p = pb.start() ;
+        	
         	 
         	 p.waitFor(4, TimeUnit.SECONDS) ;
+        	 
+        	 BufferedReader br =new BufferedReader(new InputStreamReader(p.getInputStream(), "UTF-8")) ;
+        	 BufferedOutputStream out = new BufferedOutputStream(p.getOutputStream()) ;
+		    	out.write("echo $hostname".getBytes());
+		    	out.write("\n".getBytes());
+		    	if(br.readLine() != null)
+		    	{
+		    		this.connected = true ;
+		    	}
         	 Thread.yield();
         	 return p.isAlive() ;
 
@@ -77,6 +87,14 @@ public class Connection extends Thread {
            	ProcessBuilder pb = new ProcessBuilder("ssh", "-tt", "pgallo@tp-1a222-" + machinenr + ".enst.fr", "-o StrictHostKeyChecking = no", "-i id_rsa") ;
            	 p = pb.start() ;
            	p.waitFor(4, TimeUnit.SECONDS) ;
+           	BufferedReader br =new BufferedReader(new InputStreamReader(p.getInputStream(), "UTF-8")) ;
+       	 BufferedOutputStream out = new BufferedOutputStream(p.getOutputStream()) ;
+		    	out.write("echo $hostname".getBytes());
+		    	out.write("\n".getBytes());
+		    	if(br.readLine() != null)
+		    	{
+		    		this.connected = true ;
+		    	}
            	Thread.yield();
            	return p.isAlive() ;
 
@@ -84,12 +102,9 @@ public class Connection extends Thread {
           //pb.redirectErrorStream(true);
           
         }
-        }catch (IOException iOException) {
-        iOException.printStackTrace();
-      } catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        }catch (Exception e) {
+        e.printStackTrace();
+      } 
       
       return false ;
       
@@ -113,30 +128,33 @@ public class Connection extends Thread {
     	try
         	{
     		
-    		
-    		BufferedOutputStream out = new BufferedOutputStream(p.getOutputStream()) ;
-    	
-    	
-    	
-    		BufferedReader br =new BufferedReader(new InputStreamReader(p.getInputStream(), "UTF-8")) ;
-	    	out.write("echo $hostname".getBytes());
-	    	out.write("\n".getBytes());
+    			if(this.isconnected())
+    			{
+    				
+    			System.out.println("Machine "+machinenr+ " is connected !!!") ;
+	    		
+	    		BufferedOutputStream out = new BufferedOutputStream(p.getOutputStream()) ;
 	    	
-	    	String s ;
-	    	if((s = br.readLine()) != null)
-	    	{
-	    		System.out.println(s);
-
-		    	this.deploy(out, br) ;
-		    	connectedmachines.add(this.machinenr) ;
-		    	return true ;
-	    	}
-	    	else
-	    	{
-	    		out.close();
-	    		br.close();
-	    		return false ;
-	    	}
+	    	
+	    	
+	    		BufferedReader br =new BufferedReader(new InputStreamReader(p.getInputStream(), "UTF-8")) ;
+		    	
+		    	
+		    	
+	
+			    	this.deploy(out, br) ;
+			    	connectedmachines.add(this.machinenr) ;
+			    	out.close();
+		    		br.close();
+			    	return true ;
+		    	}
+		    	else
+		    	{
+		    		System.out.println("Machine "+machinenr+"is offline");
+		    		
+		    		return false ;
+		    	}
+    			
     	}catch(Exception e)
     	{
     		e.printStackTrace();
@@ -144,6 +162,32 @@ public class Connection extends Thread {
     	return false ;
     	}
 
+    public void reduce()
+    {
+    	if( this.machinenr < 10)
+    	{
+			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "2").inheritIO() ;
+			try {
+					Process p  = pb.start() ;
+					p.waitFor() ;
+			}catch (Exception e) {
+				// TODO Auto-generated catch block
+					e.printStackTrace();
+			}
+    	}
+    	else
+    	{
+    		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "2").inheritIO() ;
+        	try {
+	    			Process p  = pb.start() ;
+	    			p.waitFor() ;
+    		}catch (Exception e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+    	}
+    }
+    
     public void shuffle()
     {
     	if( this.machinenr < 10)
@@ -191,9 +235,28 @@ public class Connection extends Thread {
 	    	
 	    	System.out.println("...");
     		System.out.println("\n");
+	    	out.write("rm -rf /tmp/pgallo/reduces".getBytes());
+	    	out.write("\n".getBytes());
+	    	out.flush();
+	    	
+	    	System.out.println("...");
+    		System.out.println("\n");
+	    	out.write("rm -rf /tmp/pgallo".getBytes());
+	    	out.write("\n".getBytes());
+	    	out.flush();
+	    	
+	    	System.out.println("...");
+    		System.out.println("\n");
 	    	out.write("rm -rf /tmp/pgallo/slave.jar".getBytes());
 	    	out.write("\n".getBytes());
 	    	out.flush();
+	    	
+	    	System.out.println("...");
+    		System.out.println("\n");
+	    	out.write("rm -rf /tmp/pgallo/splits".getBytes());
+	    	out.write("\n".getBytes());
+	    	out.flush();
+	    	
     		
     		System.out.println("Trying to create folder...");
     		System.out.println("\n");
@@ -240,7 +303,7 @@ public class Connection extends Thread {
 		
 		    			Process p = pb.start() ;
 		
-		    			this.splitnr = number ;
+		    			
 		    			
 		    			p.waitFor() ;
 		    			

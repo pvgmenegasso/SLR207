@@ -28,7 +28,7 @@ public class main {
 	  ArrayList<Connection> cons = new ArrayList<Connection>();
 	  
 	  
-	  for(int i=0; i<11 ; i++)
+	  for(int i=1; i<10 ; i++)
 	  {
 	  Connection c = new Connection(i) ;
 	  
@@ -37,34 +37,62 @@ public class main {
 	  cons.add(c) ;
 	  }
 	  
+	  try {
+		Thread.sleep(6000);
+	} catch (InterruptedException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
 	  
 	  cons.forEach( connection ->
-	  { 
-		  if( connection != null)
-		  {
-		  		  if(connection .isAlive())
-		  		  {
+	  			{ 
+		  
+		  		  try {
 		  			  connection.checkconn() ;
-		  			  
-				  try {
-					connection.join(10000);
-					
-				} catch (Exception e) {
+		  			  }catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 		  		  }
-			 }
-	  		}
+			 
+	  		
 			  );
 	  
 	  Connection.resetsplit() ;
 	  
 		Connection.connectedmachines.forEach(machine ->
 		{
-			cons.get(machine).map();
-			cons.get(machine).shuffle();
+			cons.get(machine-1).map();
+			
 		});
+		Connection.connectedmachines.forEach(machine ->
+		{
+			
+			cons.get(machine-1).shuffle();
+			
+			
+		});
+		Connection.connectedmachines.forEach(machine ->
+		{
+			
+			
+			cons.get(machine-1).reduce();
+		});
+		
+		
+		cons.forEach( connection ->
+			{ 
+  
+  		  try {
+  			  connection.join();
+  			  }catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+  		  }
+	 
+		
+	  );
 			  
 			  
 			  

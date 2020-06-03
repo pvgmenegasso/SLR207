@@ -2,9 +2,12 @@ package slave;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -19,10 +22,11 @@ public class main {
 		
 
 		int mode = Integer.parseInt(args[0]) ;
-		int splitnr = Integer.parseInt(args[1]) ;	
 		
 		
-		LinkedHashMap<String, Integer> words = new LinkedHashMap<String, Integer>();
+		
+		//LinkedHashMap<String, Integer> words = new LinkedHashMap<String, Integer>();
+		
 		FileReader fr = null ;
 		
 		
@@ -36,22 +40,34 @@ public class main {
 						// Declaration des variables relatives au scanner
 						
 						// Choisir l'archive a lire
-						
+						int splitnr = Integer.parseInt(args[1]) ;	
 						fr = new FileReader("/tmp/pgallo/splits/split"+splitnr) ;
 						
 						
 						BufferedReader br = new BufferedReader(fr) ;
 						Scanner        sc = new Scanner(br) ;
+						String line ;
+						String[] values ;
+						ArrayList<String> words = new ArrayList<String>();
 						
-						
-						System.out.println("begin counting... /n") ;
+						System.out.println("mapping...") ;
 			
+					
 						
 						// Declaration de variable pour compter le temps
 						long startTime = System.currentTimeMillis();
 						
+						
 						// Compter les mots
-						wordCounter.counter(sc, words);
+						while((line = br.readLine()) != null)
+						{
+							values = line.split(" ");
+							
+							for( int i = 0 ; i< values.length ; i++ )
+							{
+								words.add(values[i]) ;
+							}
+						}
 						
 						// Encore pour le temps
 						long endTime  = System.currentTimeMillis();
@@ -69,20 +85,20 @@ public class main {
 						
 						System.out.println(" Commençant le triage ");
 						
-						startTime = System.currentTimeMillis() ;
+						//startTime = System.currentTimeMillis() ;
 						
 						// Faire le sorting du HashMap
-						words = Sort.sort(words) ;
+						//words = Sort.sort(words) ;
 			
-						endTime = System.currentTimeMillis() ;
-						time = endTime - startTime ;
+						//endTime = System.currentTimeMillis() ;
+						//time = endTime - startTime ;
 						
 						
-					    System.out.println("Temps de triage: " + time);
-					    LinkedHashMap<String, Integer> myNewMap = words.entrySet().stream()
+					    //System.out.println("Temps de triage: " + time);
+					    /*LinkedHashMap<String, Integer> myNewMap = words.entrySet().stream()
 					    	    .limit(50)
 					    	    .collect(LinkedHashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), Map::putAll);
-					    
+					    */
 					    //System.out.println(myNewMap.entrySet().toString());
 					    try 
 					    {
@@ -90,7 +106,25 @@ public class main {
 					    	
 					    		
 					    	PrintWriter out = new PrintWriter("/tmp/pgallo/maps/UM"+splitnr+".txt") ;
-					    	out.write(myNewMap.toString());
+					    	
+					    	words.forEach( word ->
+								    	{
+								    		out.write(word + "  1");
+								    		out.write("\n");
+								    		
+								    	}
+					    			
+					    			
+					    			
+					    			
+					    			
+					    			);
+					    	
+					    	
+					    	
+					    	
+					    	
+					    	
 					    	out.flush();
 					    	out.close();
 					    	
@@ -121,7 +155,7 @@ public class main {
 						
 						//THIRD ARGUMENT IS MAX NUMBER OF MACHINES FOR THE HASH
 						long modulo = Integer.parseInt(args[2]) ;
-						
+						int splitnr = Integer.parseInt(args[1]) ;	
 						fr = new FileReader("/tmp/pgallo/maps/UM"+splitnr+".txt") ;
 						BufferedReader br = new BufferedReader(fr) ;
 						Scanner        sc = new Scanner(br) ;
@@ -147,7 +181,7 @@ public class main {
 						
 						for(int i = 1 ; i <= modulo ; i++)
 						{
-							if(i < 10)
+							if(i < 11)
 							{
 								p = new ProcessBuilder("ssh","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + i + ".enst.fr","mkdir","-p", "/tmp/pgallo/shufflesreceived").inheritIO().start() ;
 								p.waitFor() ;
@@ -173,6 +207,8 @@ public class main {
 							
 							if(sc.hasNext())
 							{
+								writer.write(next);
+								writer.write(" ");
 								writer.write(sc.next());
 								writer.flush();
 								writer.close();
@@ -184,7 +220,7 @@ public class main {
 								System.out.println("modulo do hash ="+next.hashCode()%modulo);
 						
 
-								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-0" + ((Math.abs(next.hashCode())%modulo)+1) + ".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
+								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-0" + ((Math.abs(next.hashCode())%modulo+1)) + ".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
 					
 								p.waitFor();
 							
@@ -194,7 +230,7 @@ public class main {
 								System.out.println("modulo do hash ="+next.hashCode()%modulo);
 								
 
-								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-" + ((Math.abs(next.hashCode())%modulo)+1)+".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
+								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-" + ((Math.abs(next.hashCode())%modulo))+".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
 					
 								p.waitFor();
 							}
@@ -210,6 +246,109 @@ public class main {
 					}
 				
 				
+				
+					break;
+					
+					
+			case 2:
+				
+					File directoryPath = new File("/tmp/pgallo/shufflesreceived/");
+					String contents[] = directoryPath.list();
+					LinkedHashMap<Integer, Integer> hashes = new LinkedHashMap<Integer, Integer>() ;
+					String[] words ;
+					
+					
+					System.out.println("Beggining reduction...");
+					System.out.println("\n");
+					
+					LinkedHashMap<Integer, String> unhashed = new LinkedHashMap<Integer, String>() ;
+					
+					for(int i = 0 ; i < contents.length ; i++)
+					{
+						System.out.println("...") ;
+						System.out.println("\n") ;
+						System.out.println("full string: "+contents[i]) ;
+						words = contents[i].split("-") ;
+						
+						System.out.println("divided: "+words[0] +"  " + words[1]) ;
+						if(hashes.containsKey(Integer.parseInt(words[0])))
+						{
+							int count = hashes.get(Integer.parseInt(words[0])) ;
+							System.out.println("valor atual da chave"+Integer.parseInt(words[0])+":  "+count);
+							count ++ ;
+							hashes.replace(Integer.parseInt(words[0]), count) ;
+						}
+						else
+						{
+							System.out.println("não contem a key");
+							hashes.put(Integer.parseInt(words[0]), 1) ;
+							try {
+									fr = new FileReader("/tmp/pgallo/shufflesreceived/"+words[0]+"-"+words[1]) ;
+									BufferedReader br = new BufferedReader(fr) ;
+									Scanner sc = new Scanner(br) ;
+									unhashed.put(Integer.parseInt(words[0]), sc.next()) ;
+									fr.close();
+									br.close();
+									sc.close();
+									
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							
+						}
+					}
+					
+					System.out.println("creating reduce dir....");
+					
+					try {
+						Process p = new ProcessBuilder("mkdir", "-p", "/tmp/pgallo/reduces").inheritIO().start() ;
+						p.waitFor() ;
+						System.out.println("\n reduce dir created");
+						
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					
+					System.out.println("Starting to write reduction.. \n");
+					
+					
+					for (Map.Entry<Integer, Integer> entry : hashes.entrySet()) {
+					    Integer key = entry.getKey();
+					    System.out.println("key: "+key);
+					    Integer value = entry.getValue();
+					    System.out.println("\n value: "+ value) ;
+					    
+					    File file = new File("/tmp/pgallo/reduces/"+key+".txt");
+					    System.out.println("Writing reduction for key:" +key  +"\n");
+					    System.out.println("Which stands for the word:" + unhashed.get(key)) ;
+						try {
+							file.createNewFile() ;
+							FileWriter writer = new FileWriter(file); 
+							writer.write(unhashed.get(key));
+							writer.write(" ");
+							writer.write(value.toString());
+							writer.flush();
+							writer.close();
+							
+							//writer.write(value.);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+					    
+					    
+					    // ...
+					}
+					
+					
+					
+				
+				
+					
 				
 					break;
 			

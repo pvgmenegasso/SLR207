@@ -171,9 +171,12 @@ public class main {
 							file.createNewFile() ;
 							FileWriter writer = new FileWriter(file); 
 							
-							writer.write(sc.next());
-							writer.flush();
-							writer.close();
+							if(sc.hasNext())
+							{
+								writer.write(sc.next());
+								writer.flush();
+								writer.close();
+							}
 							
 							System.out.println("Copying shuffle to distant machine");
 							if(next.hashCode()%modulo < 10)
@@ -181,7 +184,7 @@ public class main {
 								System.out.println("modulo do hash ="+next.hashCode()%modulo);
 						
 
-								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-0" + Math.abs(next.hashCode())%modulo + ".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
+								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-0" + ((Math.abs(next.hashCode())%modulo)+1) + ".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
 					
 								p.waitFor();
 							
@@ -191,7 +194,7 @@ public class main {
 								System.out.println("modulo do hash ="+next.hashCode()%modulo);
 								
 
-								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-" + Math.abs(next.hashCode())%modulo + ".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
+								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-" + ((Math.abs(next.hashCode())%modulo)+1)+".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
 					
 								p.waitFor();
 							}

@@ -22,7 +22,7 @@ public class Connection extends Thread {
 
     private int machinenr ;
     
-    private static int machinesconnected = 0 ;
+    public static ArrayList<Integer> connectedmachines = new ArrayList<Integer>() ;
     
     private int splitnr = -99;
     
@@ -30,11 +30,11 @@ public class Connection extends Thread {
     
     static int split = 0 ;
     
-    static ArrayList<Integer> machinesWithSplits;
+
     
     public Connection(int machinenr)
     {
-    	machinesconnected ++ ;
+    	
     	this.machinenr = machinenr ;
     
     }
@@ -47,16 +47,11 @@ public class Connection extends Thread {
     
     public int getsplit()
     {
-    	if(split >= 0 && split <3)
-    	{
+
     		int oldsplit = split ;
     		split ++ ;
     		return oldsplit ;
-    	}
-    	else
-    	{
-    		return -99 ;
-    	}
+
     }
     
     public boolean newconnection()
@@ -133,6 +128,7 @@ public class Connection extends Thread {
 	    		System.out.println(s);
 
 		    	this.deploy(out, br) ;
+		    	connectedmachines.add(this.machinenr) ;
 		    	return true ;
 	    	}
 	    	else
@@ -152,7 +148,7 @@ public class Connection extends Thread {
     {
     	if( this.machinenr < 10)
     	{
-			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.splitnr, ""+machinesconnected).inheritIO() ;
+			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.splitnr, ""+connectedmachines.size()).inheritIO() ;
 			try {
 					Process p  = pb.start() ;
 					p.waitFor() ;
@@ -163,7 +159,7 @@ public class Connection extends Thread {
     	}
     	else
     	{
-    		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.splitnr, ""+machinesconnected).inheritIO() ;
+    		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.splitnr, ""+connectedmachines.size()).inheritIO() ;
         	try {
 	    			Process p  = pb.start() ;
 	    			p.waitFor() ;

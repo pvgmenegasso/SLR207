@@ -60,20 +60,11 @@ public class main {
 	  
 	  Connection.resetsplit() ;
 	  
-		cons.forEach( machine ->
-		
-		{if(machine != null)
+		Connection.connectedmachines.forEach(machine ->
 		{
-			if(machine.isconnected() == true)
-			{
-				machine.map();
-				machine.shuffle();
-				
-			}
-		}}
-				
-				
-				);
+			cons.get(machine).map();
+			cons.get(machine).shuffle();
+		});
 			  
 			  
 			  

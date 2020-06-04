@@ -3,10 +3,12 @@ package deploy;
 
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,88 +23,156 @@ import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 
 
+
 public class main {
-  public static void main(String[] paramArrayOfString) throws IOException {
 	
-	  LinkedBlockingQueue<Thread> queue = new LinkedBlockingQueue<Thread>() ;
-	  ArrayList<Connection> cons = new ArrayList<Connection>();
+	public static void startconns(ArrayList<Connection> threads)
+	{
+		Connection.resetsplit();
+		Connection.resetmachines() ;
+		for(int i=1; i<10 ; i++)
+		  {
+			  Connection c = new Connection(i) ;
+			  c.start();
+			  try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			 
+			  threads.add(c) ;
+		  }
+		
+		
+		
+	};
+	
+  public static void main(String[] Args) throws IOException, InterruptedException {
 	  
 	  
-	  for(int i=1; i<10 ; i++)
-	  {
-	  Connection c = new Connection(i) ;
+	  //int splitsize = Integer.parseInt(Args[0]) ;
+	  //String file = Args[1] ;
 	  
-	  c.start();
+	 // File f = new File(file) ;
 	  
-	  cons.add(c) ;
-	  }
+	  /*Process p = new ProcessBuilder("split", "-b 600m", "/Users/pvgmenegasso/eclipse-workspace/Wiki",  "/Users/pvgmenegasso/split").inheritIO().start() ;
 	  
 	  try {
-		Thread.sleep(6000);
-	} catch (InterruptedException e1) {
+		p.waitFor() ;
+	} catch (InterruptedException e2) {
 		// TODO Auto-generated catch block
-		e1.printStackTrace();
-	}
+		e2.printStackTrace();
+	}*/
+	
 	  
-	  cons.forEach( connection ->
-	  			{ 
+	  ArrayList<Connection> threads = new ArrayList<Connection>() ;
+	  
+	  
+	  long starttime = System.currentTimeMillis() ;
+	  
+	  
+	  startconns(threads) ;
+	  
+	  for(Connection current: threads)
+	  {
+		 current.checkconn() ;
+	  }
+	  
+	  for(Connection current : threads)
+	  {
+		  current.join();
+	  }
+	  
+	  threads.clear();
+
+	  
+	  long currtime = System.currentTimeMillis() ;
+	  System.out.println("Deploy time:  " + (currtime - starttime));
+	  
+	  startconns(threads) ;
+			  
+			  for(Connection t: threads)
+			  {
+				  t.map();
+			  }
+			  
+			  
+			  for(Thread current : threads)
+			  {
+				  current.join();
+			  }
+			  
+			  threads.clear();
+		
+		
+		
+		System.out.println("map time:  " + (System.currentTimeMillis() - starttime));
+		currtime = System.currentTimeMillis() ;
+		
+		startconns(threads) ;
 		  
-		  		  try {
-		  			  connection.checkconn() ;
-		  			  }catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-		  		  }
-			 
-	  		
-			  );
-	  
-	  Connection.resetsplit() ;
-	  
-		Connection.connectedmachines.forEach(machine ->
-		{
-			cons.get(machine-1).map();
-			
-		});
-		Connection.connectedmachines.forEach(machine ->
-		{
-			
-			cons.get(machine-1).shuffle();
-			
-			
-		});
-		Connection.connectedmachines.forEach(machine ->
-		{
-			
-			
-			cons.get(machine-1).reduce();
-		});
+		  for(Connection t: threads)
+		  {
+			  t.shuffle();
+		  }
+		  
+		  
+		  for(Thread current : threads)
+		  {
+			  current.join();
+		  }
+		  
+		  threads.clear();
+		  
+		  
+		  System.out.println("shuffle time:  " + (System.currentTimeMillis() - starttime));
+			currtime = System.currentTimeMillis() ;
 		
 		
-		cons.forEach( connection ->
-			{ 
-  
-  		  try {
-  			  connection.join();
-  			  }catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-  		  }
+
+			startconns(threads) ;
+			  
+			  for(Connection t: threads)
+			  {
+				  t.reduce();
+			  }
+			  
+			  
+			  for(Thread current : threads)
+			  {
+				  current.join();
+			  }
+			  
+			  threads.clear();
+		
+		
+		System.out.println("reduce time:  " + (System.currentTimeMillis() - starttime));
+		currtime = System.currentTimeMillis() ;
+		
+		
+		
 	 
 		
-	  );
+	  
 			  
 			  
 			  
 	
 }
-} 
+
 	  
 	  
-	  
-	  
+
+
+
+
+
+
+
+
+
+}
 /*	  
 	  
 	  arrayList.forEach(p -> {

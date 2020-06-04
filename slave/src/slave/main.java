@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -15,6 +16,8 @@ import java.util.Scanner;
 
 
 public class main {
+	
+	public static int count = 0 ;
 
 	public static void main (String[] args) {
 		
@@ -201,8 +204,9 @@ public class main {
 						while (sc.hasNext())
 						{
 							next = sc.next() ;
-							File file = new File("/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt");
+							File file = new File("/tmp/pgallo/shuffles/"+next.hashCode()+"-"+count+".txt");
 							file.createNewFile() ;
+							
 							FileWriter writer = new FileWriter(file); 
 							
 							if(sc.hasNext())
@@ -220,7 +224,7 @@ public class main {
 								System.out.println("modulo do hash ="+next.hashCode()%modulo);
 						
 
-								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-0" + ((Math.abs(next.hashCode())%modulo+1)) + ".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
+								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+count+".txt", "pgallo@tp-1a222-0" + ((Math.abs(next.hashCode())%modulo+1)) + ".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
 					
 								p.waitFor();
 							
@@ -230,10 +234,12 @@ public class main {
 								System.out.println("modulo do hash ="+next.hashCode()%modulo);
 								
 
-								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+splitnr+".txt", "pgallo@tp-1a222-" + ((Math.abs(next.hashCode())%modulo))+".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
+								p = new ProcessBuilder("rsync","-azv","/tmp/pgallo/shuffles/"+next.hashCode()+"-"+count+".txt", "pgallo@tp-1a222-" + ((Math.abs(next.hashCode())%modulo))+".enst.fr:/tmp/pgallo/shufflesreceived").inheritIO().start() ;
 					
 								p.waitFor();
 							}
+							
+							count++ ;
 						}
 						
 						
@@ -252,50 +258,56 @@ public class main {
 					
 			case 2:
 				
+			try {
+				System.out.println("Beggining reduce on machine:" +java.net.InetAddress.getLocalHost().getHostName());
+			} catch (UnknownHostException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 					File directoryPath = new File("/tmp/pgallo/shufflesreceived/");
 					String contents[] = directoryPath.list();
 					LinkedHashMap<Integer, Integer> hashes = new LinkedHashMap<Integer, Integer>() ;
 					String[] words ;
 					
 					
-					System.out.println("Beggining reduction...");
-					System.out.println("\n");
+					
 					
 					LinkedHashMap<Integer, String> unhashed = new LinkedHashMap<Integer, String>() ;
 					
 					for(int i = 0 ; i < contents.length ; i++)
 					{
-						System.out.println("...") ;
-						System.out.println("\n") ;
-						System.out.println("full string: "+contents[i]) ;
+						
 						words = contents[i].split("-") ;
 						
-						System.out.println("divided: "+words[0] +"  " + words[1]) ;
-						if(hashes.containsKey(Integer.parseInt(words[0])))
+						System.out.println("divided: "+words[0] +" " + words[1]) ;
+						if( words[0] != "")
 						{
-							int count = hashes.get(Integer.parseInt(words[0])) ;
-							System.out.println("valor atual da chave"+Integer.parseInt(words[0])+":  "+count);
-							count ++ ;
-							hashes.replace(Integer.parseInt(words[0]), count) ;
-						}
-						else
-						{
-							System.out.println("não contem a key");
-							hashes.put(Integer.parseInt(words[0]), 1) ;
-							try {
-									fr = new FileReader("/tmp/pgallo/shufflesreceived/"+words[0]+"-"+words[1]) ;
-									BufferedReader br = new BufferedReader(fr) ;
-									Scanner sc = new Scanner(br) ;
-									unhashed.put(Integer.parseInt(words[0]), sc.next()) ;
-									fr.close();
-									br.close();
-									sc.close();
+								if(hashes.containsKey(Integer.parseInt(words[0])))
+								{
+									int count = hashes.get(Integer.parseInt(words[0])) ;
+									System.out.println("valor atual da chave"+Integer.parseInt(words[0])+":  "+count);
+									count ++ ;
+									hashes.replace(Integer.parseInt(words[0]), count) ;
+								}
+								else
+								{
+									System.out.println("não contem a key");
+									hashes.put(Integer.parseInt(words[0]), 1) ;
+									try {
+											fr = new FileReader("/tmp/pgallo/shufflesreceived/"+words[0]+"-"+words[1]) ;
+											BufferedReader br = new BufferedReader(fr) ;
+											Scanner sc = new Scanner(br) ;
+											unhashed.put(Integer.parseInt(words[0]), sc.next()) ;
+											fr.close();
+											br.close();
+											sc.close();
+											
+									} catch (Exception e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
 									
-							} catch (Exception e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							
+								}
 						}
 					}
 					
@@ -356,5 +368,8 @@ public class main {
 			// TODO Auto-generated method stub
 
 	}
-
+	
+	
 }
+
+

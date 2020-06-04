@@ -22,20 +22,26 @@ public class Connection extends Thread {
 
     private int machinenr ;
     
-    public static ArrayList<Integer> connectedmachines = new ArrayList<Integer>() ;
+    public static int connectedmachines = 0;
     
     private int splitnr = -99;
     
     private boolean connected = false ;
     
+    private boolean busy = false ;
+    
     static int split = 0 ;
     
-
+    public static void resetmachines()
+    {
+    	connectedmachines = 0;
+    }
     
     public Connection(int machinenr)
     {
     	
     	this.machinenr = machinenr ;
+    	
     
     }
     
@@ -48,11 +54,23 @@ public class Connection extends Thread {
     public int getsplit() 
     {
 
-    		this.splitnr = split ;
-    		split ++ ;
-    		return this.splitnr;
+		int tempsplit = split ;
+		split ++ ;
+		return tempsplit ;
 
     }
+    
+    public void setBusy(boolean busy)
+    {
+    	this.busy = busy ;
+    }
+
+    public boolean getBusy()
+    {
+    	return this.busy ;
+    }
+    
+    
     
     public boolean newconnection()
     {
@@ -75,8 +93,9 @@ public class Connection extends Thread {
 		    	if(br.readLine() != null)
 		    	{
 		    		this.connected = true ;
+		    		connectedmachines++;
 		    	}
-        	 Thread.yield();
+        	 
         	 return p.isAlive() ;
 
           //br.write("ssh pgallo@tp-1a222-0" + i + ".enst.fr -o StrictHostKeyChecking = no &");
@@ -84,7 +103,7 @@ public class Connection extends Thread {
 
         } else {
         	System.out.println("Starting connection on machine"+machinenr+"...");
-           	ProcessBuilder pb = new ProcessBuilder("ssh", "-tt", "pgallo@tp-1a222-" + machinenr + ".enst.fr", "-o StrictHostKeyChecking = no", "-i id_rsa") ;
+           	ProcessBuilder pb = new ProcessBuilder("ssh", "-tt", "pgallo@tp-1a222-" + machinenr + ".enst.fr", "-o StrictHostKeyChecking = no") ;
            	 p = pb.start() ;
            	p.waitFor(4, TimeUnit.SECONDS) ;
            	BufferedReader br =new BufferedReader(new InputStreamReader(p.getInputStream(), "UTF-8")) ;
@@ -95,7 +114,7 @@ public class Connection extends Thread {
 		    	{
 		    		this.connected = true ;
 		    	}
-           	Thread.yield();
+           	
            	return p.isAlive() ;
 
           //br.write("ssh pgallo@tp-1a222-" + i + ".enst.fr -o StrictHostKeyChecking = no &");
@@ -125,11 +144,9 @@ public class Connection extends Thread {
     public boolean checkconn()
     {
     	System.out.println("checking connection on machine "+machinenr+"...") ;
-    	try
-        	{
+    	try{
     		
-    			if(this.isconnected())
-    			{
+    			
     				
     			System.out.println("Machine "+machinenr+ " is connected !!!") ;
 	    		
@@ -143,17 +160,12 @@ public class Connection extends Thread {
 		    	
 	
 			    	this.deploy(out, br) ;
-			    	connectedmachines.add(this.machinenr) ;
+			    	
 			    	out.close();
 		    		br.close();
 			    	return true ;
-		    	}
-		    	else
-		    	{
-		    		System.out.println("Machine "+machinenr+"is offline");
-		    		
-		    		return false ;
-		    	}
+		    	
+		    	
     			
     	}catch(Exception e)
     	{
@@ -164,12 +176,15 @@ public class Connection extends Thread {
 
     public void reduce()
     {
+    	
     	if( this.machinenr < 10)
     	{
 			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "2").inheritIO() ;
 			try {
 					Process p  = pb.start() ;
-					p.waitFor() ;
+					
+					
+					
 			}catch (Exception e) {
 				// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -180,22 +195,26 @@ public class Connection extends Thread {
     		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "2").inheritIO() ;
         	try {
 	    			Process p  = pb.start() ;
-	    			p.waitFor() ;
+	    			
+	    			
     		}catch (Exception e) {
     			// TODO Auto-generated catch block
     			e.printStackTrace();
     		}
     	}
+    	
     }
     
     public void shuffle()
     {
+    	this.setBusy(false);
     	if( this.machinenr < 10)
     	{
-			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.splitnr, ""+connectedmachines.size()).inheritIO() ;
+			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.getsplit(), ""+connectedmachines).inheritIO() ;
 			try {
 					Process p  = pb.start() ;
-					p.waitFor() ;
+					
+					
 			}catch (Exception e) {
 				// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -203,15 +222,18 @@ public class Connection extends Thread {
     	}
     	else
     	{
-    		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.splitnr, ""+connectedmachines.size()).inheritIO() ;
+    		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "1", ""+this.getsplit(), ""+connectedmachines).inheritIO() ;
         	try {
 	    			Process p  = pb.start() ;
-	    			p.waitFor() ;
+	    			
+	    			
     		}catch (Exception e) {
     			// TODO Auto-generated catch block
     			e.printStackTrace();
     		}
     	}
+    	
+    	this.setBusy(false);
     }
     
     public boolean deploy(BufferedOutputStream out, BufferedReader br)
@@ -299,13 +321,13 @@ public class Connection extends Thread {
 	    			
 	    				int number = this.getsplit() ;
 			    			
-		    			ProcessBuilder pb = new ProcessBuilder("rsync", "-azv", "/Users/pvgmenegasso/split"+number, "pgallo@tp-1a222-0" + machinenr + ".enst.fr:/tmp/pgallo/splits").inheritIO() ;
+		    			ProcessBuilder pb = new ProcessBuilder("rsync", "-azv", "/Users/pvgmenegasso/eclipse-workspace/split"+number, "pgallo@tp-1a222-0" + machinenr + ".enst.fr:/tmp/pgallo/splits").inheritIO() ;
 		
 		    			Process p = pb.start() ;
 		
-		    			
-		    			
 		    			p.waitFor() ;
+		    			
+		    			
 		    			
 		
 		    			
@@ -313,7 +335,7 @@ public class Connection extends Thread {
 		    			
 		    			p = pb.start() ;
 		    			
-		    			p.waitFor() ;
+		    			p.waitFor();
 		    			
 		    			this.connected = true ;
 		    			
@@ -340,19 +362,19 @@ public class Connection extends Thread {
 	    			
 	    			int number = this.getsplit() ;
 	    			
-	    			ProcessBuilder pb = new ProcessBuilder("rsync", "-azv", "/Users/pvgmenegasso/split"+number, "pgallo@tp-1a222-" + machinenr + ".enst.fr:/tmp/pgallo/splits").inheritIO() ;
+	    			ProcessBuilder pb = new ProcessBuilder("rsync", "-azv", "/Users/pvgmenegasso/eclipse-workspace/split"+number, "pgallo@tp-1a222-" + machinenr + ".enst.fr:/tmp/pgallo/splits").inheritIO() ;
 
 	    			Process p = pb.start() ;
 	    			
 	    			this.splitnr = number ;
 	    			
-	    			p.waitFor() ;
+	    			
 	    			
 	    			pb = new ProcessBuilder("rsync", "-azv", "/Users/pvgmenegasso/slave.jar", "pgallo@tp-1a222-" + machinenr + ".enst.fr:/tmp/pgallo/").inheritIO() ;
 	    			
 	    			p = pb.start() ;
 	    			
-	    			p.waitFor() ;
+	    			
 	    			
 	    			this.connected = true ;
 	    			
@@ -379,12 +401,13 @@ public class Connection extends Thread {
     
     public void map()
     {
+    	this.setBusy(true);
     	if( this.machinenr < 10)
     	{
-			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "0", ""+this.splitnr).inheritIO() ;
+			ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-0" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "0", ""+this.getsplit()).inheritIO() ;
 			try {
 					Process p  = pb.start() ;
-					p.waitFor() ;
+					
 			}catch (Exception e) {
 				// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -392,15 +415,16 @@ public class Connection extends Thread {
     	}
     	else
     	{
-    		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "", ""+this.splitnr).inheritIO() ;
+    		ProcessBuilder pb = new ProcessBuilder("ssh", "-tt","-o StrictHostKeyChecking = no", "pgallo@tp-1a222-" + machinenr + ".enst.fr","java -jar /tmp/pgallo/slave.jar", "", ""+this.getsplit()).inheritIO() ;
         	try {
 	    			Process p  = pb.start() ;
-	    			p.waitFor() ;
+	    			
     		}catch (Exception e) {
     			// TODO Auto-generated catch block
     			e.printStackTrace();
     		}
     	}
+    	this.setBusy(false);
     }
      
 	public void run()
